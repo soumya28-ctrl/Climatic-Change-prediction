@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flood Detection System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: url('https://platform.vox.com/wp-content/uploads/sites/2/2025/08/GettyImages-2226720340.jpg?quality=90&strip=all&crop=0%2C0%2C100%2C100&w=2400');
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+        }
+
+        /* Animated background elements */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(120, 119, 198, 0.2) 0%, transparent 50%);
+            animation: backgroundMove 15s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        @keyframes backgroundMove {
+            0%, 100% { transform: translateX(0px) translateY(0px); }
+            25% { transform: translateX(20px) translateY(-10px); }
+            50% { transform: translateX(-10px) translateY(20px); }
+            75% { transform: translateX(15px) translateY(10px); }
+        }
+
+        .container {
+    max-width: 900px;
+    background: rgba(255, 255, 255, 0.3); /* semi-transparent white */
+    backdrop-filter: blur(10px);
+    padding: 45px;
+    margin: 0 auto;
+    border-radius: 20px;
+    box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.1),
+        0 15px 12px rgba(0, 0, 0, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    position: relative;
+    z-index: 2;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+
+        .header {
+            text-align: center;
+            margin-bottom: 45px;
+        }
+
+        .header h2 {
+            font-size: 2.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 12px;
+            letter-spacing: -0.02em;
+        }
+
+        .header p {
+            color: #64748b;
+            font-size: 1.15rem;
+            font-weight: 400;
+            opacity: 0.8;
+        }
+
+        .form-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 35px;
+        }
+
+        .form-group {
+            position: relative;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 10px;
+            font-size: 0.95rem;
+            letter-spacing: 0.3px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .field-icon {
+            font-size: 1.1rem;
+            opacity: 0.7;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 16px 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #1e293b;
+            background: #ffffff;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            outline: none;
+        }
+
+        input[type="number"]:focus {
+            border-color: #2a5298;
+            box-shadow: 
+                0 0 0 3px rgba(42, 82, 152, 0.1),
+                0 4px 12px rgba(0, 0, 0, 0.05);
+            transform: translateY(-1px);
+        }
+
+        input[type="number"]:hover {
+            border-color: #cbd5e1;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+
+        .submit-container {
+            text-align: center;
+            margin-top: 40px;
+        }
+
+        input[type="submit"] {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            border: none;
+            padding: 18px 45px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 
+                0 8px 25px rgba(30, 60, 114, 0.25),
+                0 4px 10px rgba(0, 0, 0, 0.05);
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 0.5px;
+            min-width: 200px;
+        }
+
+        input[type="submit"]:hover {
+            transform: translateY(-2px);
+            box-shadow: 
+                0 15px 35px rgba(30, 60, 114, 0.35),
+                0 8px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        input[type="submit"]:active {
+            transform: translateY(0px);
+        }
+
+        /* Shine effect on button */
+        input[type="submit"]::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.6s;
+        }
+
+        input[type="submit"]:hover::before {
+            left: 100%;
+        }
+
+        .result {
+            margin-top: 35px;
+            padding: 25px 30px;
+            text-align: center;
+            font-size: 1.25rem;
+            font-weight: 600;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            color: white;
+            box-shadow: 
+                0 10px 25px rgba(5, 150, 105, 0.25),
+                0 4px 10px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .result::before {
+            content: '🎯';
+            margin-right: 10px;
+            font-size: 1.3rem;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+
+            .container {
+                padding: 30px 25px;
+                border-radius: 16px;
+            }
+
+            .header h2 {
+                font-size: 2.2rem;
+            }
+
+            .form-container {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            input[type="submit"] {
+                padding: 16px 35px;
+                font-size: 1rem;
+                min-width: 180px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                padding: 25px 20px;
+            }
+
+            .header h2 {
+                font-size: 1.9rem;
+            }
+
+            .header p {
+                font-size: 1rem;
+            }
+
+            .form-container {
+                gap: 18px;
+            }
+
+            input[type="number"] {
+                padding: 14px 16px;
+            }
+
+            input[type="submit"] {
+                padding: 14px 30px;
+                min-width: 160px;
+            }
+        }
+
+        /* Subtle animations */
+        .container {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        .form-group {
+            animation: fadeInStagger 0.5s ease-out both;
+        }
+
+        .form-group:nth-child(1) { animation-delay: 0.05s; }
+        .form-group:nth-child(2) { animation-delay: 0.1s; }
+        .form-group:nth-child(3) { animation-delay: 0.15s; }
+        .form-group:nth-child(4) { animation-delay: 0.2s; }
+        .form-group:nth-child(5) { animation-delay: 0.25s; }
+        .form-group:nth-child(6) { animation-delay: 0.3s; }
+        .form-group:nth-child(7) { animation-delay: 0.35s; }
+        .form-group:nth-child(8) { animation-delay: 0.4s; }
+        .form-group:nth-child(9) { animation-delay: 0.45s; }
+        .form-group:nth-child(10) { animation-delay: 0.5s; }
+        .form-group:nth-child(11) { animation-delay: 0.55s; }
+        .form-group:nth-child(12) { animation-delay: 0.6s; }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInStagger {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Flood Detection System</h2>
+            <p>Advanced Risk Assessment & Prediction Analysis</p>
+        </div>
+
+        <form method="POST" action="/">
+            <div class="form-container">
+                <div class="form-group">
+                    <label for="MonsoonIntensity">
+                        <span class="field-icon">🌧️</span>
+                        Monsoon Intensity
+                    </label>
+                    <input type="number" step="any" name="MonsoonIntensity" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="TopographyDrainage">
+                        <span class="field-icon">🏔️</span>
+                        Topography Drainage
+                    </label>
+                    <input type="number" step="any" name="TopographyDrainage" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="RiverManagement">
+                        <span class="field-icon">🏞️</span>
+                        River Management
+                    </label>
+                    <input type="number" step="any" name="RiverManagement" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="Deforestation">
+                        <span class="field-icon">🌳</span>
+                        Deforestation
+                    </label>
+                    <input type="number" step="any" name="Deforestation" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="Urbanization">
+                        <span class="field-icon">🏙️</span>
+                        Urbanization
+                    </label>
+                    <input type="number" step="any" name="Urbanization" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="ClimateChange">
+                        <span class="field-icon">🌡️</span>
+                        Climate Change
+                    </label>
+                    <input type="number" step="any" name="ClimateChange" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="DrainageSystems">
+                        <span class="field-icon">🚰</span>
+                        Drainage Systems
+                    </label>
+                    <input type="number" step="any" name="DrainageSystems" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="CoastalVulnerability">
+                        <span class="field-icon">🏖️</span>
+                        Coastal Vulnerability
+                    </label>
+                    <input type="number" step="any" name="CoastalVulnerability" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="Landslides">
+                        <span class="field-icon">⛰️</span>
+                        Landslides
+                    </label>
+                    <input type="number" step="any" name="Landslides" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="Watersheds">
+                        <span class="field-icon">💧</span>
+                        Watersheds
+                    </label>
+                    <input type="number" step="any" name="Watersheds" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="DeterioratingInfrastructure">
+                        <span class="field-icon">🏗️</span>
+                        Deteriorating Infrastructure
+                    </label>
+                    <input type="number" step="any" name="DeterioratingInfrastructure" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="PopulationScore">
+                        <span class="field-icon">👥</span>
+                        Population Score
+                    </label>
+                    <input type="number" step="any" name="PopulationScore" required>
+                </div>
+            </div>
+
+            <div class="submit-container">
+                <input type="submit" value="Predict Flood Risk">
+            </div>
+        </form>
+
+        {% if prediction is defined %}
+        <div class="result">
+            <strong>Prediction:</strong> {{ prediction }}
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>
